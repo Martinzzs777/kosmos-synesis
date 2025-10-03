@@ -1,0 +1,17 @@
+streamlit
+google-generativeai
+arxiv
+chromadb
+sentence-transformers
+PyMuPDF
+python-dotenv
+celery
+redis
+openai
+langchain
+pandas
+numpy
+jupyter
+flask
+fastapi
+pytest
