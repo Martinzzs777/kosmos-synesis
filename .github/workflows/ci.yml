@@ -1,14 +1,6 @@
-name: CI (disabled)
+name: CI removed
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: {}
 
-jobs:
-  no-op:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "CI desabilitado a pedido."
+jobs: {}
 
