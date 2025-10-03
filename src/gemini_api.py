@@ -29,15 +29,33 @@ class GeminiAPI:
         genai.configure(api_key=api_key)
 
         # Lógica para selecionar um modelo compatível dinamicamente
-        model_name = 'models/gemini-1.5-pro-latest'
-        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        
-        if model_name not in available_models:
-            # Se o preferido não estiver disponível, pega o primeiro 'gemini' compatível
-            model_name = next((m for m in available_models if 'gemini' in m), None)
+        # Permite override via variável de ambiente
+        env_model = os.getenv("GEMINI_MODEL_NAME")
+        preferred_models = [
+            env_model,
+            'models/gemini-1.5-pro-latest',
+            'gemini-1.5-pro',
+            'gemini-pro'
+        ]
+        model_name = None
+        try:
+            available_models = [
+                m.name for m in genai.list_models()
+                if hasattr(m, 'supported_generation_methods') and 'generateContent' in m.supported_generation_methods
+            ]
+            for candidate in filter(None, preferred_models):
+                if candidate in available_models:
+                    model_name = candidate
+                    break
+            # fallback: escolhe primeiro disponível contendo 'gemini'
+            if not model_name and available_models:
+                model_name = next((m for m in available_models if 'gemini' in m), available_models[0])
+        except Exception:
+            # Em caso de falha ao listar modelos (offline/permissões), usa preferências estáticas
+            model_name = env_model or 'models/gemini-1.5-pro-latest'
 
         if not model_name:
-            raise ValueError("Nenhum modelo 'gemini' compatível com 'generateContent' foi encontrado.")
+            raise ValueError("Nenhum modelo compatível para geração de conteúdo foi determinado.")
 
         print(f"Kosmos-Synesis usando o modelo: {model_name}")
         self.model = genai.GenerativeModel(model_name)
@@ -72,7 +90,7 @@ class GeminiAPI:
 
         try:
             response = self.model.generate_content(prompt)
-            return response.text
+            return getattr(response, 'text', str(response))
         except Exception as e:
             print(f"Erro ao gerar resposta com a API da Gemini: {e}")
             return "Ocorreu um erro ao contatar a API da Gemini."
@@ -96,7 +114,7 @@ class GeminiAPI:
         """
         try:
             response = self.model.generate_content(prompt)
-            return response.text
+            return getattr(response, 'text', str(response))
         except Exception as e:
             print(f"Erro ao gerar hipótese com a API da Gemini: {e}")
             return "Ocorreu um erro ao gerar a hipótese."
